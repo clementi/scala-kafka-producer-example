@@ -1,7 +1,8 @@
 import java.util.Properties
-import java.util.concurrent.ExecutionException
+import java.util.concurrent.{ExecutionException, TimeoutException}
 
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{BufferExhaustedException, KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.{LongSerializer, StringSerializer}
 
 object Program extends App {
@@ -9,6 +10,7 @@ object Program extends App {
 
   5000 times { i =>
     val record = new ProducerRecord[Long, String]("demo", s"This is record ${i}")
+
     try {
       val metadata = producer.send(record).get
       println(s"Record sent with key $i to partition ${metadata.partition} with offset ${metadata.offset}")
@@ -17,6 +19,12 @@ object Program extends App {
         println(s"Execution exception: ${e.getMessage}")
       case e: InterruptedException =>
         println(s"Interrupted: ${e.getMessage}")
+      case e: SerializationException =>
+        println(s"Serialization failed: ${e.getMessage}")
+      case e: BufferExhaustedException =>
+        println(s"Buffer exhausted: ${e.getMessage}")
+      case e: TimeoutException =>
+        println(s"Timed out: ${e.getMessage}")
       case e =>
         println(s"Other exception: ${e.getMessage}")
     }
